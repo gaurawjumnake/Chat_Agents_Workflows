@@ -1,0 +1,150 @@
+MODEL SELECTION GUIDE
+=====================
+Pick the right model for the task. No single model wins everything.
+Switching takes 2 seconds. Use that.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLAUDE  (Anthropic)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/model claude-sonnet-4-6    # Default workhorse. Writing tests, explaining
+                            # code, refactoring, PR reviews, bug fixes.
+                            # Best value in the Claude family (~80% of Opus
+                            # quality at a fraction of the cost).
+
+/model claude-opus-4-6      # Complex only. Multi-file architecture decisions,
+                            # debugging gnarly cross-system issues, long-context
+                            # reasoning (1M tokens), anything requiring deep
+                            # intent understanding on ambiguous prompts.
+                            # #1 on SWE-bench Verified (80.8%).
+
+/model claude-haiku-4-5     # Quick and cheap. Lookups, renaming, formatting,
+                            # anything repetitive or high-volume. Fastest
+                            # response in the Claude family.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GPT  (OpenAI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/model gpt-5.4              # Best all-rounder from OpenAI. Fast, native
+                            # computer use, 1M context in Codex mode.
+                            # Leads SWE-bench Pro (57.7%) and Terminal-Bench.
+                            # Good for: agentic tasks, tool-heavy workflows,
+                            # speed-sensitive pipelines.
+
+/model gpt-5.4-thinking     # Slow but thorough. Use when gpt-5.4 gets it
+                            # wrong on complex reasoning tasks. Treat as
+                            # last resort — latency is high, cost is steep.
+
+/model gpt-4o               # Budget GPT option. Faster and cheaper than 5.4.
+                            # Good for: quick code gen, autocomplete-style
+                            # tasks, general Q&A. Not for hard reasoning.
+
+/model o4-mini              # Lightweight reasoning. Good middle ground between
+                            # speed and thinking depth. Use for moderate
+                            # complexity tasks where 4o isn't enough but
+                            # 5.4-thinking is overkill.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GEMINI  (Google)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/model gemini-3.1-pro       # Best price-to-performance at the frontier.
+                            # #1 reasoning benchmark (GPQA Diamond: 94.3%).
+                            # 1M token context window. Ideal for: dumping
+                            # an entire codebase or docs set and asking it
+                            # to navigate, refactor, or summarise.
+                            # $2/$12 per 1M tokens — cheapest frontier option.
+
+/model gemini-3-flash       # Fast and cheap. High-volume tasks, CI/CD
+                            # integrations, automated pipelines, anything
+                            # where you need many calls at low cost.
+                            # Not for complex reasoning — needs clearer
+                            # instructions than Pro.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GROK  (xAI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/model grok-4               # Strong coder (75% SWE-bench). Worth testing
+                            # for: complex coding tasks, anything requiring
+                            # real-time web/X data in context, scientific
+                            # frontier questions (leads Humanity's Last Exam
+                            # at 50.7%). Skip if you don't need live data.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASK → MODEL CHEAT SHEET
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Writing / explaining code     →  claude-sonnet-4-6
+Writing tests                 →  claude-sonnet-4-6
+Refactoring                   →  claude-sonnet-4-6
+PR / code review              →  claude-sonnet-4-6
+Bug fix (single file)         →  claude-sonnet-4-6  or  gpt-5.4
+Multi-file architecture       →  claude-opus-4-6    or  gpt-5.4-thinking
+Debugging cross-system issue  →  claude-opus-4-6
+Full codebase analysis        →  gemini-3.1-pro     (largest context wins)
+Renaming / formatting / regex →  claude-haiku-4-5   or  gpt-4o
+High-volume / CI pipelines    →  gemini-3-flash      or  claude-haiku-4-5
+Agentic / tool-heavy task     →  gpt-5.4            or  claude-opus-4-6
+Security review               →  claude-opus-4-6
+Writing docs / READMEs        →  claude-sonnet-4-6
+Onboarding to new codebase    →  gemini-3.1-pro     (dump the whole repo)
+Quick lookup or Q&A           →  claude-haiku-4-5   or  gpt-4o
+Real-time / live data needed  →  grok-4
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RULES OF THUMB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Start with sonnet-4-6.
+  It handles 80%+ of daily tasks well. Move up only when it falls short.
+
+Move to opus-4-6 when:
+  - The answer requires reasoning across many files or systems.
+  - sonnet gave a wrong or shallow answer and you need it right.
+  - The prompt is ambiguous and intent-understanding matters.
+
+Move to haiku-4-5 or gemini-3-flash when:
+  - The task is repetitive, mechanical, or high-volume.
+  - Speed or cost is the constraint, not quality.
+
+Use gemini-3.1-pro when:
+  - Context window size is the bottleneck (>200K tokens of input).
+  - You want the cheapest frontier-quality output.
+
+Use gpt-5.4 when:
+  - You need native computer use or fast agentic task execution.
+  - Terminal / CLI-heavy workflows where it leads benchmarks.
+
+Avoid thinking/reasoning variants (opus max, gpt-5.4-thinking) for:
+  - Anything with a time constraint.
+  - Simple or well-defined tasks. They're slow and expensive.
+  - First attempt. Try the standard variant first.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BENCHMARK REFERENCE  (May 2026)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Model                  SWE-bench   GPQA      Notes
+                       Verified    Diamond
+─────────────────────────────────────────────────────────
+claude-opus-4-6        80.8%       91.3%     Best verified coding, long context
+gemini-3.1-pro         80.6%       94.3%     Best reasoning, cheapest frontier
+gpt-5.4                ~80%        92.8%     Best agentic / terminal execution
+claude-sonnet-4-6      79.6%        —        Best value daily driver
+grok-4                 75.0%        —        Live data + competitive coding
+gpt-4o                  —           —        Fast, cheap, general purpose
+claude-haiku-4-5        —           —        Fastest, lowest cost in family
+gemini-3-flash          —           —        Fastest, lowest cost from Google
+
+SWE-bench Verified = % of real GitHub issues resolved autonomously (500 tasks).
+GPQA Diamond = PhD-level science reasoning. Higher = better.
+─────────────────────────────────────────────────────────

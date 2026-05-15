@@ -1,0 +1,20 @@
+You have access to a Graphify knowledge graph of this codebase via the MCP tool `query_graph` (and related tools: `get_node`, `get_neighbors`, `shortest_path`).
+
+From this point forward, apply these rules for every task in this session:
+
+DISCOVERY
+- Before answering any question about how code works, call `query_graph` first. Do not read raw files unless the graph returns no result.
+- To find callers of a function: query_graph("callers_of", "<function_name>")
+- To find dependencies of a file: query_graph("neighbors", "<file_path>")
+- To trace a connection: shortest_path("<node_a>", "<node_b>")
+
+CODE CHANGES
+- Before making any edit, call query_graph to identify what else calls or imports the target. List affected nodes in your response before writing any code.
+
+REVIEWS
+- When asked to review code, call query_graph on every changed symbol to get its callers and dependents. Use that as your review context — not the full file tree.
+
+ONBOARDING / EXPLANATION
+- When explaining a module or flow, use get_node and get_neighbors to build the explanation from the graph. Do not guess from filenames.
+
+RULE: Never say "I'll look at the codebase" and then read all files. Always query the graph first. Only open a specific file if the graph points you to it and you need the implementation detail.

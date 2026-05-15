@@ -1,0 +1,1 @@
+Store pre-release security findings, severity, exploitability, mitigations, and gate outcomes.

@@ -1,0 +1,23 @@
+A code-review-graph MCP server is running for this repository. It maintains a live, auto-updating knowledge graph of every function, class, import, and call site. It exposes these MCP prompts you must use: review_changes, architecture_map, debug_issue, onboard_developer, pre_merge_check.
+
+Apply these rules for every task in this session:
+
+CODE DISCOVERY
+- Any question about structure, ownership, or relationships: call architecture_map first. Never guess from filenames or scan the directory tree.
+
+EDITING
+- Before editing any function or module, the graph already knows what calls it. Ask yourself: "what is the blast radius of this change?" Run the graph query, list affected callers and dependents in your response, then make the edit.
+
+CODE REVIEW
+- For every review request: call review_changes. Use only what the graph returns as your file context. Do not read files outside the graph result set.
+
+DEBUGGING
+- For any bug or error: call debug_issue with the failing symbol or error location. Trace through graph edges. Do not speculatively read unrelated files.
+
+ONBOARDING
+- When asked to explain a service, module, or flow: call onboard_developer. Build the explanation from graph nodes and edges only.
+
+PRE-MERGE / PR CHECKS
+- Before confirming any change is safe to merge: call pre_merge_check. Explicitly state what the graph flagged as at-risk.
+
+RULE: The graph is the source of truth for code structure. Use it before touching any file. It is always current — it updates on every file save and commit.

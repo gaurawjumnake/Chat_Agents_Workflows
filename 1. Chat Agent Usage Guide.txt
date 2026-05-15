@@ -1,0 +1,465 @@
+AI AGENT EFFICIENCY GUIDE
+==========================
+Token saving · Accuracy · Speed · Knowledge graph usage
+For: Developers · QA · DevOps — any AI coding agent (Copilot, Claude, Codex, Kiro, Cursor)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THE CORE PROBLEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every message to an AI agent costs tokens.
+Tokens = money + latency + context pollution.
+
+The agent reads your entire conversation history on every reply.
+The longer it gets, the noisier, slower, and more expensive it becomes.
+
+Most token waste comes from:
+  - Sending too much context (whole files, long threads)
+  - Asking the wrong tool to do the wrong job
+  - Retrying bad prompts instead of fixing them
+  - Letting conversations grow without resetting
+
+This guide fixes all of that.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. KNOWLEDGE GRAPH FIRST  (biggest single win)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before asking the agent anything structural, the graph answers it for free.
+
+Tools: code-review-graph (MCP) · graphify (skill) · Codeflow (JSON export)
+
+Without graph:  agent reads 200+ files → ~50,000 tokens per query
+With graph:     agent queries the graph → ~500–2,000 tokens per query
+Saving:         up to 49x on large repos (measured on real projects)
+
+Rules:
+  - Always build the graph once per repo before starting any session.
+  - Let the graph tell the agent what to read. Never let the agent guess.
+  - Use graph for: code discovery, impact analysis, dependency tracing,
+    onboarding, finding callers/dependents, architecture questions.
+  - Only open raw files when the graph points you to a specific location
+    and you need the implementation detail.
+
+Examples of graph-first queries:
+  ✅  "What calls the payment handler?"        → graph answers in <1s
+  ✅  "What breaks if I change UserService?"   → graph answers in <1s
+  ✅  "Show the auth flow"                     → graph answers in <1s
+  ❌  "Read the whole src/ folder and tell me how auth works"  (50k tokens)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. CONTROL USAGE — HIGH-VALUE TASKS ONLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Not every task deserves a frontier model call.
+
+USE the agent for:
+  - Complex logic design
+  - Debugging cross-file or cross-system issues
+  - Refactoring with correctness constraints
+  - Security review
+  - Architecture decisions
+  - Writing tests for non-trivial behaviour
+
+AVOID the agent for:
+  - Basic syntax questions  →  search docs instead
+  - Repetitive boilerplate  →  use a snippet / template
+  - Formatting / renaming   →  use IDE built-ins or haiku/flash
+  - "What does X mean?"     →  search first
+
+Simple test: if you already know the answer and just want it typed —
+don't use the agent. Type it yourself or use a template.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. USE THE RIGHT TOOL FOR THE JOB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tier 1 — Free / local (zero tokens, zero cost)
+  Ollama · LM Studio · local Mistral/Llama models
+  Use for: brainstorming, first draft, exploring ideas,
+           rough documentation, summarising notes,
+           checking your own understanding before prompting.
+
+Tier 2 — Fast / cheap cloud models
+  claude-haiku-4-5 · gemini-3-flash · gpt-4o · o4-mini
+  Use for: formatting, renaming, simple Q&A, repetitive tasks,
+           high-volume CI pipeline calls.
+
+Tier 3 — Frontier models (spend wisely)
+  claude-sonnet-4-6 · gemini-3.1-pro · gpt-5.4
+  Use for: writing, refactoring, bug fixing, code review, tests.
+  Default to this tier for most daily coding tasks.
+
+Tier 4 — Heavy reasoning (use sparingly)
+  claude-opus-4-6 · gpt-5.4-thinking
+  Use for: gnarly cross-system bugs, architecture decisions,
+           anything where Tier 3 gave a wrong or shallow answer.
+
+Workflow: Local tool → refine → Tier 2 → refine → Tier 3/4 only if needed.
+Don't start at Tier 4 because the task feels hard.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. PROMPT COMPRESSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The agent does not need the whole file. It needs the right 20 lines.
+
+❌  "Analyze this 500-line file and find the bug"
+✅  "This function fails for edge case X. Fix only this part: <20 lines>"
+
+❌  "Here is our entire API layer. Suggest improvements."
+✅  "This endpoint has an N+1 query problem on line 47. Fix it without
+     changing the response contract."
+
+❌  "Review all my recent changes."
+✅  "Review only the validation logic I added in processPayment(). Focus
+     on edge cases and error handling. Under 10 lines of feedback."
+
+Rules:
+  - Send the minimum code needed to answer the question.
+  - Isolate the problem before you send it.
+  - Use the graph to find which 20 lines matter, then send those.
+  - If you need the agent to understand context, summarise it in 2-3
+    sentences rather than pasting full files.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. STAGED PROMPTING (two-step, not one big prompt)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+One long unfocused prompt → vague answer → retry loop → token waste.
+Two focused prompts → precise answer → done.
+
+Step 1 — Clarify and compress (local tool or cheap model)
+  "Given this problem, what is the minimum I need to include in my prompt
+   to get a correct answer from a coding agent?"
+
+Step 2 — Execute (frontier model)
+  Send only the refined, focused prompt.
+
+Example:
+  Before staged prompting:
+    "Here is my whole auth module. It sometimes returns 401 incorrectly.
+     Figure out why and fix it." → agent reads 800 lines → vague fix
+
+  After staged prompting:
+    Step 1 (local): narrow down to: token expiry check on line 112
+    Step 2 (frontier): "This token expiry check returns 401 when the clock
+    skew is >2s. Add a 5s tolerance window. Only change this function: <15 lines>"
+    → precise fix, ~400 tokens
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. SPEC / INSTRUCTION / TEMPLATE BASED PROMPTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Repeat the same instructions in every prompt → token waste every time.
+Write them once in a spec file → agent reads them once.
+
+Create a .github/copilot-instructions.md  (or equivalent for your agent):
+  - Coding style and conventions your team follows
+  - What the agent should always/never do
+  - Response format requirements (e.g. "always include tests")
+  - Project-specific context (stack, patterns, constraints)
+
+The agent reads this file automatically at the start of every session.
+You never repeat yourself. Every prompt is shorter.
+
+Reusable prompt templates — keep these in a file, paste as needed:
+
+  BUG FIX
+  ────────
+  Context: <1-2 sentence description of what this code does>
+  Problem: <exact failure, error message, or wrong behaviour>
+  Scope: Fix only <function/method name>. Do not touch anything else.
+  Constraint: <any requirement e.g. "keep the same return type">
+  Code: <paste the isolated function — not the whole file>
+
+  CODE GENERATION
+  ───────────────
+  Generate a <function/class/module> that:
+  - Does: <exact behaviour>
+  - Accepts: <inputs and types>
+  - Returns: <output and type>
+  - Constraints: <e.g. no external libraries, under 30 lines, typed>
+  - Edge cases to handle: <list>
+  Do not add explanation. Code only.
+
+  CODE REVIEW
+  ───────────
+  Review this code for: <pick one: correctness / security / performance>
+  Focus only on: <specific area e.g. "the retry logic">
+  Return: bullet list of issues only. Under 8 bullets. No praise.
+  Code: <paste the relevant section only>
+
+  PR DESCRIPTION
+  ──────────────
+  Summarise this diff as a PR description.
+  Format: one sentence summary, then bullet list of changes (max 5).
+  Audience: senior engineers who will review this.
+  Diff: <paste only the changed lines, not the full file>
+
+  TEST GENERATION
+  ───────────────
+  Write unit tests for this function.
+  Framework: <jest / pytest / junit / etc>
+  Cover: happy path, edge cases, error conditions.
+  Do not test implementation details — test behaviour only.
+  Function: <paste function only>
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. BOOTSTRAPPING / FILE REFACTORING BEFORE PROMPTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Large files are the #1 source of token waste.
+A 1,000-line file sent to the agent costs 10x more than a 100-line file.
+Refactor first. Then prompt.
+
+Signs a file needs splitting before you use it with an agent:
+  - Over 200-300 lines
+  - Multiple unrelated concerns in one file
+  - You find yourself saying "ignore the top half of this file"
+  - The agent keeps referencing the wrong section
+
+How to bootstrap refactoring:
+  Step 1 — Ask the agent (or local tool) to identify split points:
+    "This 800-line file has multiple responsibilities. List where you would
+     split it and what each new file would be called. Don't write code yet."
+
+  Step 2 — Review and approve the plan.
+
+  Step 3 — Execute one split at a time:
+    "Extract only the validation functions (lines 120-180) into a new file
+     called validators.py. Update the import in the original file. Nothing else."
+
+  Step 4 — After splitting, rebuild the graph:
+    code-review-graph update
+    graphify /path/to/project
+
+Result: smaller files → smaller prompts → faster, cheaper, more accurate answers.
+
+Rule: Never paste a file over 200 lines into an agent chat. Split it first.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. LIMIT CHAT DEPTH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every reply in a chat session adds to the context window.
+By message 10, the agent is carrying 8,000+ tokens of history
+that is mostly irrelevant to your current question.
+
+Rules:
+  - Start a new chat after 3-5 exchanges on the same topic.
+  - Start a new chat every time you switch to a different task.
+  - Never carry a debugging thread into a code generation task.
+  - If the conversation has gone sideways, don't push through — reset.
+
+Signs you need a new chat:
+  - The agent starts repeating earlier answers.
+  - Responses feel less focused or are referencing old context.
+  - You have already used "try again" more than once.
+  - The task has changed but the thread has not.
+
+Before starting a new chat, write a 2-3 sentence summary of where you are.
+Paste that summary as the first message in the new chat.
+You get a clean slate without losing progress.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. AVOID RETRY LOOPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Try again" sends the same bad prompt twice. Same input → same bad output.
+Each retry burns tokens without improving the answer.
+
+❌  Click "Try Again" repeatedly
+❌  "That's wrong, try again"
+❌  "Almost, but not quite, can you try once more?"
+
+✅  Stop. Figure out what was missing or wrong in the prompt.
+✅  Rephrase with the missing constraint added.
+✅  Start a new chat if the thread has drifted.
+✅  Use a local tool to refine your prompt before sending again.
+
+When an answer is wrong, ask yourself:
+  - Did I give enough context?    → add a constraint or example
+  - Did I give too much context?  → trim and isolate the problem
+  - Was the scope unclear?        → specify exactly what to change
+  - Is this the wrong model?      → move up or down a tier
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. RESTRICT OUTPUT SIZE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The agent will write 500 words when 50 will do, unless you say otherwise.
+Output tokens cost the same as input tokens. Long answers = slow + expensive.
+
+Add output constraints directly in the prompt:
+
+  "Code only. No explanation."
+  "Return the fixed function only. Nothing else."
+  "Bullet list. Max 5 items. No prose."
+  "Under 10 lines of output."
+  "One-sentence answer."
+  "Show only the changed lines, not the full file."
+  "Return the diff, not the full rewrite."
+
+For code reviews and bug explanations:
+  "List only the problems. No praise, no summary."
+  "One bullet per issue. Max 6 bullets."
+
+For architecture advice:
+  "Give me three options, each in one sentence. No detail yet."
+  Then pick one and ask for detail only on that option.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. INLINE OVER CHAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Chat = heavy. Loads full conversation context on every message.
+Inline = light. Reads only the surrounding code, no history.
+
+Use INLINE suggestions for:
+  - Completing a line or block you've started
+  - Simple edits to the current function
+  - Variable naming, type annotations
+  - Quick fixes flagged by the IDE
+
+Use CHAT for:
+  - Multi-step reasoning
+  - Anything involving two or more files
+  - Tasks that require explanation or options
+
+Rule: default to inline first. Open chat only when inline isn't enough.
+Every task that stays in inline mode costs a fraction of a chat message.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. SESSION WARM-UP PROMPT  (use at the start of every session)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Paste this at the start of a new chat to set ground rules for the session.
+Adjust the [brackets] to match your setup.
+
+─────────────────────────────────────────────────────────────────────
+You are working in [project name]. Stack: [e.g. Python/FastAPI, React/TS].
+
+Rules for this session:
+1. Use the knowledge graph before reading any file.
+   [code-review-graph MCP is running / graphify skill is active / see attached graph.json]
+2. Never read files outside what the graph returns.
+3. Keep all responses focused. Code only unless I ask for explanation.
+4. Do not rewrite code I did not ask you to change.
+5. If a question is ambiguous, ask one clarifying question — don't guess.
+6. Output size: match the size of the task. Small fix = small response.
+
+Current task: [one sentence — what you're working on right now]
+─────────────────────────────────────────────────────────────────────
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. CONTEXT INJECTION INSTEAD OF CONVERSATION HISTORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Long conversations are expensive. A well-structured single prompt is cheaper
+and often more accurate than a 10-message thread.
+
+Pattern: carry state in the prompt, not in the chat history.
+
+Instead of:
+  Message 1: "Here is the function..."
+  Message 2: "Now add error handling..."
+  Message 3: "Also make it async..."
+  Message 4: "And add a return type..."
+  (4 messages × full history on each = expensive)
+
+Do this in one message:
+  "Refactor this function to: (1) add error handling for ValueError,
+   (2) make it async, (3) add return type annotation.
+   Here is the function: <code>
+   Return the updated function only."
+
+Fewer messages. Same result. Less context carried.
+
+When you do need a multi-turn session, summarise progress before each new
+exchange:
+  "So far: we added validation to processPayment(). It now handles null
+   input. Next: add rate limiting. Here is the current state: <code>"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. REUSABLE WORKFLOWS (avoid repeat queries)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you ask the agent the same type of question more than twice a week,
+turn it into a workflow.
+
+Common candidates:
+  - "Review my changes before commit"     →  pre-commit review workflow
+  - "Write tests for this function"       →  test generation workflow
+  - "Summarise this PR"                   →  PR description workflow
+  - "What is the impact of this change?"  →  impact analysis workflow
+                                             (use code-review-graph detect-changes)
+
+How to build a workflow:
+  1. Write the prompt template (see Section 6).
+  2. Save it as a .prompt.md file in .github/ or a team prompts/ folder.
+  3. Reference it in your agent instructions file.
+  4. In Copilot: use /file to attach it. In Claude Code: add to CLAUDE.md.
+
+The agent runs the same quality check every time, with zero repeated typing.
+
+code-review-graph built-in workflows you get for free after setup:
+  review_changes       →  structured PR review
+  architecture_map     →  codebase structure overview
+  debug_issue          →  guided debugging from a failing symbol
+  onboard_developer    →  explain a module or service
+  pre_merge_check      →  risk-scored change impact before merge
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE — DO AND DON'T
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DO                                      DON'T
+──────────────────────────────────────────────────────────────────
+Query the graph before reading files    Paste whole files into chat
+Split large files before prompting      Send 500+ line files
+Use inline for small edits              Use chat for everything
+Start new chat every 3-5 messages       Let threads run indefinitely
+Use local tools for brainstorming       Use frontier model for rough ideas
+Add output constraints to every prompt  Accept long unfocused answers
+Use templates for repeated task types   Retype the same instructions
+Fix the prompt when answer is wrong     Click "Try Again" repeatedly
+Specify exact scope of change           Say "improve this code"
+Carry state in the prompt               Build state in conversation history
+Build graph once, query it always       Ask the agent to explore the repo
+──────────────────────────────────────────────────────────────────
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOKEN COST INTUITION  (approximate, for awareness)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Action                                  Approx token cost
+────────────────────────────────────────────────────────
+One graph query (code-review-graph)     500–2,000
+One well-scoped prompt + answer         1,000–4,000
+Pasting one 100-line function           ~150
+Pasting one 500-line file               ~750
+Pasting a full 2,000-line module        ~3,000
+Full repo scan (no graph, 10k files)    150,000–500,000+
+10-message chat thread (frontier)       15,000–40,000
+Same work, graph-first + short prompts  2,000–6,000
+────────────────────────────────────────────────────────
+The graph doesn't just save tokens. It makes the answers better
+because the agent reads the right code, not all the code.

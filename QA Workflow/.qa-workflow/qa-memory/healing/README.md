@@ -1,0 +1,1 @@
+Store flaky and unstable failure healing analyses. Every patch proposal requires root cause evidence and human approval.

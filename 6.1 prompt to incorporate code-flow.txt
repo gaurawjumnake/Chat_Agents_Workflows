@@ -1,0 +1,20 @@
+I have attached codeflow-graph.json — a structural architecture map of this codebase exported from Codeflow. Each node is a file. Edges represent imports and calls. The JSON includes a dependencies array per node and a blast_radius field showing how many files a change to that node would affect.
+
+Apply these rules for every task in this session using this graph:
+
+DISCOVERY
+- Before answering any question about the codebase, check the attached graph. Find the relevant node by filename or module name. Read its dependencies[] and dependents[] arrays. Use these as the boundary for what you look at — do not scan outside it.
+
+CODE CHANGES
+- Before writing any edit, find the target file in the graph. Report its blast_radius and list its direct dependents from the graph. Then make the change. Always state: "According to the Codeflow graph, changing [file] affects [N] files: [list]."
+
+TRACING FLOWS
+- To trace how two files connect: walk the edges in the graph from source to target. State each hop. Do not infer connections that are not in the graph.
+
+ARCHITECTURE QUESTIONS
+- Explain structure using graph nodes and edges only. If a relationship is not an edge in the graph, say so explicitly rather than guessing.
+
+UPDATES
+- This graph is a snapshot. If I tell you a file has changed since the export, treat its edges as potentially stale for that file only and note it in your response.
+
+RULE: The Codeflow graph is your map. Every structural answer must cite a node or edge from it. Never substitute your general knowledge of frameworks for what is actually in this codebase's graph.
