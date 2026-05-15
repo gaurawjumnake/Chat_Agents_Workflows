@@ -32,6 +32,8 @@ Primary intent:
 - 6.1 prompt to incorporate code-flow.txt: apply Codeflow graph snapshot rules
 - 6.2 prompt to incorporate code-review-graph.txt: apply live code-review-graph MCP rules
 - 6.3 prompt to incorporate graphify.txt: apply Graphify MCP graph-query rules
+- 7. prompt to update QA workflow for ui-ux testing.md: extend QA workflow with UI/UX testing phases, visual regression, accessibility, responsive and healing layers
+- 8. prompt to update developer workflow for UI developer.md: extend Developer workflow with Figma-driven, component-based, and accessibility-aware frontend implementation phases
 
 ## Recommended Prompt Sequence
 
@@ -42,12 +44,16 @@ Use prompts in this exact order, and only apply advanced prompts when their requ
 3. Run 6.1 prompt to incorporate code-flow.txt (if Codeflow graph snapshot exists)
 4. Run 6.2 prompt to incorporate code-review-graph.txt (if code-review-graph MCP is available)
 5. Run 6.3 prompt to incorporate graphify.txt (if Graphify MCP tools are available)
+6. Run 7. prompt to update QA workflow for ui-ux testing.md (if your project includes UI/UX QA)
+7. Run 8. prompt to update developer workflow for UI developer.md (if your project includes frontend/UI development)
 
 Why this order:
 
 - Prompt 4 builds the reusable context layer
 - Prompt 5 makes workflows consume that layer
 - Prompts 6.1 to 6.3 enforce graph-first discovery and safer change impact analysis
+- Prompt 7 extends QA with UI/UX validation, visual regression, accessibility and healing layers
+- Prompt 8 extends the Developer workflow with Figma-driven, component-based and responsive implementation phases
 
 ## Developer Workflow Overview
 
@@ -72,6 +78,28 @@ Execution principle:
 - Diff-focused context
 - No implementation before approved spec
 
+### UI/Frontend Extension (prompt 8)
+
+Run prompt 8 to add a frontend development layer on top of the base workflow.
+
+Additional phases:
+
+1. UI/UX Requirement Analysis
+2. Figma and Image Analysis
+3. Component Impact Analysis
+4. Frontend Architecture Planning
+5. Design System Mapping
+6. Responsive Planning
+7. Component Implementation
+8. State and Interaction Implementation
+9. Accessibility Validation
+10. Frontend Testing
+11. Visual Review
+12. Storybook and Documentation Update
+13. PR and UI Review
+
+New assets added by prompt 8: Figma analysis agents, component-focused snippets, design consistency hooks, UI context files, responsive and accessibility workflows.
+
 ## QA Workflow Overview
 
 Location: QA Workflow/.qa-workflow/
@@ -94,6 +122,25 @@ Execution principle:
 - Validation-first with hard release gates
 - Targeted regression over broad reruns
 - Persistent QA memory for reuse across cycles
+
+### UI/UX QA Extension (prompt 7)
+
+Run prompt 7 to add a dedicated UI/UX validation layer on top of the base QA workflow.
+
+Additional phases:
+
+1. UI Impact Analysis
+2. UX Flow Validation
+3. Accessibility Review
+4. Responsive Validation
+5. Interaction Testing
+6. Design System Validation
+7. Visual Regression Analysis
+8. Frontend Performance UX Validation
+9. UI Healing
+10. Release UX Validation
+
+New assets added by prompt 7: visual QA agents, accessibility and responsive QA agents, UI/UX hooks, UI/UX snippets, visual regression memory, frontend healing workflow with mandatory approval gates.
 
 ## Important Instructions
 
