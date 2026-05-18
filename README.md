@@ -1,4 +1,4 @@
-# Chat Agents Workflows
+# List of Chat Tools Workflows
 
 This repository contains practical workflow templates for AI-assisted software delivery, with two tracks:
 
