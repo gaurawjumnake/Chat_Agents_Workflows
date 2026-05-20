@@ -1,0 +1,215 @@
+# Entry Point: Smart Requirement Router
+
+## Purpose
+Single-entry prompt that accepts any requirement and automatically routes to the correct workflow path, with or without an existing spec.
+
+## Input
+- Requirement description (1-10 sentences)
+- Optionally: spec path (if one exists)
+- Optionally: file paths affected (optional; helps with impact analysis)
+
+## How It Works
+
+### Phase 1: Requirement Analysis
+Analyze the input requirement and determine:
+1. Is there an approved spec? (YES / NO / UNCLEAR)
+2. What type of work is this? (NEW_FEATURE / BUG_FIX / REFACTOR / REVIEW)
+3. Is scope clear? (YES / NO / PARTIAL)
+
+### Phase 2: Smart Routing
+
+**IF spec EXISTS and is APPROVED:**
+- Skip to → `hooks/implementation/pre-implementation.scope-check`
+- Output: Scope validation
+- Next: Run Implementation Agent
+
+**IF spec EXISTS but NOT APPROVED:**
+- Route to → `hooks/spec/approval-gate`
+- Output: Request approval decision
+- Next: Wait for approval, then continue to scope-check
+
+**IF spec DOES NOT EXIST:**
+- Route to → Auto-create minimal spec
+- Output: Draft spec for approval
+- Next: Wait for approval, then continue
+
+### Phase 3: Workflow Execution
+After routing decision is made:
+- Output structured next steps
+- Confirm with user before proceeding
+- Execute the determined hook or agent
+
+---
+
+## Prompt Template (Copy-Paste)
+
+```
+ENTRY POINT: Smart Requirement Router
+
+Requirement:
+<paste your requirement>
+
+Optional - Spec path (if exists):
+<specs/feature-name.md or leave blank>
+
+Optional - Affected files:
+<file paths or leave blank>
+
+ANALYZE AND ROUTE:
+
+1. Spec Status Check
+   - Is there an approved spec?
+   - Output: YES / NO / NEEDS_APPROVAL
+
+2. Work Classification
+   - Type: NEW_FEATURE / BUG_FIX / REFACTOR / REVIEW
+   - Scope clarity: CLEAR / PARTIAL / UNCLEAR
+
+3. Routing Decision
+   - Route to: [hook name or agent name]
+   - Reason: [brief explanation]
+   - Next steps: [numbered list]
+
+4. Recommended First Action
+   - Hook: [path]
+   - Input: [what to provide]
+   - Expected output: [what to expect]
+
+WAIT FOR MY CONFIRMATION before proceeding to the first action.
+```
+
+---
+
+## Routing Truth Table
+
+| Spec Exists? | Spec Approved? | Work Type | Route To | Next |
+|---|---|---|---|---|
+| YES | YES | ANY | `pre-implementation.scope-check` | Implementation |
+| YES | NO | ANY | `spec/approval-gate` | Wait for approval |
+| NO | N/A | NEW_FEATURE | Create spec (auto-draft) | Wait for approval |
+| NO | N/A | BUG_FIX | `debug/post-debug.memory-archive` | Fix implementation |
+| NO | N/A | REFACTOR | Create minimal scope spec | Wait for approval |
+| NO | N/A | REVIEW | `quality/review-diff` | Review directly |
+
+---
+
+## Entry Point Usage Pattern
+
+### Step 1: User Input
+```
+Requirement: Review and test the payment service validation logic in xyz.py
+
+Spec path: (none, new task)
+
+Affected files:
+- src/payments/validation.py
+- tests/payments/test_validation.py
+```
+
+### Step 2: Entry Point Analysis
+```
+ANALYSIS:
+1. Spec Status: DOES NOT EXIST
+2. Work Type: REVIEW (inferred from "review and test")
+3. Scope: CLEAR (file and intent specified)
+4. Route: Quality/Review directly OR create minimal spec first?
+
+RECOMMENDATION:
+- Since this is a focused file review + tests, two options:
+  Option A (Faster): Skip spec, run quality.review-diff directly
+  Option B (Safer): Create 2-minute minimal spec first
+  
+  Recommend: Option B for consistency with workflow
+```
+
+### Step 3: User Confirms
+```
+Confirmed: Go with Option B (create minimal spec first)
+```
+
+### Step 4: Entry Point Executes
+```
+✅ Creating minimal spec for: payment service validation review
+
+Next action: Wait for spec approval, then proceed to test generation
+```
+
+---
+
+## Token Rules
+
+- Entry point analysis: 300-500 tokens max
+- Route decision communication: 100-200 tokens max
+- First action execution: follow individual hook token budgets
+
+---
+
+## Integration with Copilot Instructions
+
+Add this to `.github/copilot-instructions.md`:
+
+```markdown
+## Single Entry Point
+
+For any new requirement, use the entry point instead of choosing a hook directly:
+
+**Request:**
+```
+Execute entry point:
+
+Requirement: <your requirement>
+Spec path: <path if exists, or leave blank>
+Affected files: <optional>
+```
+
+The entry point will:
+1. Analyze your requirement
+2. Check for existing spec
+3. Route to the correct hook or agent
+4. Guide you through execution
+
+This ensures consistency and saves tokens.
+```
+
+---
+
+## When to Use Entry Point vs Direct Hooks
+
+**Use Entry Point for:**
+- Any new requirement or task
+- When unsure which hook to start with
+- First-time workflow users
+- Tasks that might need a spec
+
+**Use Direct Hooks for:**
+- Continuing a task in progress (use the next sequential hook)
+- Implementing after spec is approved (start at pre-implementation.scope-check)
+- Running a known chain (chains/new-feature, chains/bug-fix, etc.)
+
+---
+
+## Benefits
+
+✅ **Simplifies workflow** - single prompt instead of multiple choices
+✅ **Spec-agnostic** - works with or without existing specs
+✅ **Intelligent routing** - detects work type automatically
+✅ **Token-efficient** - avoids unnecessary context loading
+✅ **Beginner-friendly** - no need to understand all hooks upfront
+✅ **Consistency** - enforces workflow structure automatically
+
+---
+
+## Troubleshooting
+
+### "Entry point doesn't know my spec exists"
+→ Provide the full spec path: `specs/feature-name.md`
+
+### "I don't want a spec for this quick task"
+→ Entry point will offer a "skip spec" route for simple reviews and quick fixes
+→ You must confirm that choice before proceeding
+
+### "The routing decision doesn't match my intent"
+→ Describe the discrepancy
+→ Entry point will re-analyze and suggest alternative routing
+→ You can override the recommended route
+

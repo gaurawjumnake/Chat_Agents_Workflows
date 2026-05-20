@@ -1,4 +1,10 @@
-# Daily Usage Guide (Practical)
+# Daily Usage Guide (Quick Reference Only)
+
+⚠️ **NOT AN ENTRY POINT** - See [workflow-orchestrator.md](workflow-orchestrator.md) for authoritative workflow definitions.
+
+This is a **practical checklist** for the standard daily workflow loop. Use alongside the orchestrator.
+
+---
 
 ## Fast Daily Loop
 

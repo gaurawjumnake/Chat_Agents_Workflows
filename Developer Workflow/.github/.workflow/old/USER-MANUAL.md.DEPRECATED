@@ -1,0 +1,1316 @@
+# Developer Workflow: Complete User Manual
+
+## 📖 Table of Contents
+
+1. Getting Started (5 min)
+2. Workflow Types & Selection (10 min)
+3. Phase-by-Phase Guide (30 min)
+4. Memory System (10 min)
+5. Approval Gates (10 min)
+6. Tools & IDE Integration (15 min)
+7. Troubleshooting & FAQ (10 min)
+8. Advanced Topics (optional)
+
+---
+
+## 1️⃣ Getting Started (5 min)
+
+### What is This Workflow?
+
+A structured, AI-assisted development workflow that:
+- ✅ Routes your task to the right phase
+- ✅ Enforces quality gates automatically
+- ✅ Saves decisions for team reuse
+- ✅ Optimizes AI tool usage (50-60% token reduction)
+- ✅ Works with any AI tool (Copilot, Claude, Cursor, Cline, etc.)
+
+### Three Key Principles
+
+1. **Spec-First**: Every change needs an approved specification
+2. **Memory-Persistent**: Decisions stored once, referenced forever
+3. **Gate-Enforced**: Hard stops at critical approval points
+
+### Your First Task (2 minutes)
+
+**Step 1**: Describe your task
+```
+Type: NEW_FEATURE
+Description: Add OAuth2 authentication to login
+Spec exists? NO
+Urgency: NORMAL
+```
+
+**Step 2**: Open the Orchestrator
+```
+File: .workflow/workflow-orchestrator.md
+```
+
+**Step 3**: Follow the routing
+The orchestrator tells you which phase to start with (usually Phase 1).
+
+**Step 4**: Load relevant instructions
+For new features:
+- `.workflow/instructions/workflow/lifecycle-routing.md`
+- `.workflow/instructions/core/approval-rules.md`
+
+**Step 5**: Execute current phase
+Follow the agent (Requirement Agent, Impact Agent, etc.).
+
+**Step 6**: Move to next phase
+When current phase completes, orchestrator tells you next phase.
+
+---
+
+## 2️⃣ Workflow Types & Selection (10 min)
+
+### Type A: New Feature (No Spec)
+
+**When**: Building new functionality  
+**Duration**: 2-4 hours  
+**Phases**: 1, 2, 3, 4, 5, 6, 7 (if needed), 9, 10  
+**Gates**: 3 (Spec Approval), 5 (Scope Check), 9 (Readiness)  
+
+**Example**:
+```
+Type: NEW_FEATURE
+Description: Add payment retry logic to handle transient failures
+Spec exists? NO
+Urgency: NORMAL
+```
+
+**Your Path**:
+```
+Phase 1: Requirements → Understand what needs to be built
+Phase 2: Impact → Identify affected files
+Phase 3: Spec → Create specification
+        ⛔ STOP: Approver reviews + approves spec
+Phase 4: Design → (Optional) Plan architecture
+Phase 5: Implementation → Generate code
+Phase 6: Testing → Create tests
+Phase 7: Debug → (If needed) Fix test failures
+Phase 9: Review → Code review + readiness check
+        ⛔ STOP: All checks must pass
+Phase 10: Documentation → Update README + changelog
+```
+
+---
+
+### Type B: Feature (Spec Already Exists)
+
+**When**: Spec is already approved, just need implementation  
+**Duration**: 1-3 hours  
+**Phases**: 4 (optional), 5, 6, 7 (if needed), 9, 10  
+**Gates**: 5 (Scope Check), 9 (Readiness)  
+
+**Example**:
+```
+Type: NEW_FEATURE
+Spec path: specs/payment-retry-logic.md
+Urgency: NORMAL
+```
+
+**Your Path** (Skips 1-3):
+```
+Phase 4: Design → (Skip if spec is detailed)
+Phase 5: Implementation → Generate code
+Phase 6: Testing → Create tests
+Phase 7: Debug → (If needed) Fix failures
+Phase 9: Review → Code review
+        ⛔ STOP: All checks pass
+Phase 10: Documentation
+```
+
+**Time Saved**: ~1.5 hours (skip requirement + spec phases)
+
+---
+
+### Type C: Bug Fix
+
+**When**: Production or code issue needs fixing  
+**Duration**: 1-2 hours  
+**Phases**: 1, 2, 3 (mini-spec), 5, 6, 7, 9, 10  
+**Gates**: 3 (Spec Approval), 5 (Scope Check), 9 (Readiness)  
+
+**Example**:
+```
+Type: BUG_FIX
+Description: Payment retries causing duplicate charges after timeout
+Spec exists? NO
+Urgency: NORMAL
+```
+
+**Your Path**:
+```
+Phase 1: Requirements → Understand the bug
+Phase 2: Impact → Identify affected code
+Phase 3: Specification → Create mini-spec (1 page max)
+        ⛔ STOP: Quick approval (5 min usually)
+Phase 5: Implementation → Generate fix
+Phase 6: Testing → Test regression + fix
+Phase 7: Debug → (If needed) Fix test failures
+Phase 9: Review → Code review
+        ⛔ STOP: All checks pass
+Phase 10: Documentation → Update changelog with bug fix
+```
+
+---
+
+### Type D: Code Review
+
+**When**: Existing code needs review (no implementation)  
+**Duration**: 30 minutes  
+**Phases**: 9 (review only)  
+**Gates**: 9 (Readiness)  
+
+**Example**:
+```
+Type: REVIEW
+PR link: github.com/company/repo/pull/123
+Urgency: NORMAL
+```
+
+**Your Path** (Jumps to Phase 9):
+```
+Phase 9: Review → Review PR code
+        ├─ Check spec alignment
+        ├─ Identify risks
+        ├─ Suggest improvements
+        └─ ⛔ Readiness gate (tests, coverage, linter)
+Phase 10: Documentation → (Skip unless API changes)
+```
+
+---
+
+### Type E: Hotfix (Emergency)
+
+**When**: Production is down, need urgent fix  
+**Duration**: 30-60 minutes  
+**Phases**: 1 (fast), 2 (fast), 5, 6, 9 (fast)  
+**Gates**: 9 (Readiness) only — Spec gate bypassed (logged)  
+
+**Example**:
+```
+Type: HOTFIX
+Description: Database connection pool exhausted, users getting 500 errors
+Manager: @john (approval)
+Incident: #12345
+Urgency: EMERGENCY
+```
+
+**Your Path** (Expedited):
+```
+Phase 1: Requirements → Quick analysis (2 min)
+Phase 2: Impact → Identify root cause (2 min)
+Phase 5: Implementation → Generate fix (10 min)
+Phase 6: Testing → Essential tests only (5 min)
+Phase 9: Review → Quick review + readiness (5 min)
+        ⛔ STOP: Tests must pass
+        ⛔ GATE BYPASSED: Spec approval (logged to memory)
+Phase 10: Documentation → Minimal (incident notes)
+```
+
+**Note**: Hotfix bypasses spec approval gate but is logged for post-incident review.
+
+---
+
+## 3️⃣ Phase-by-Phase Guide (30 min)
+
+### Phase 1: Requirement Analysis
+
+**Goal**: Understand what needs to be built  
+**Time**: ~10 minutes  
+**Agent**: Requirement Agent  
+**Input**: Your description  
+**Output**: Clear requirement summary + questions
+
+**What to Do**:
+1. Describe your task in plain English (not code)
+2. Include any constraints or context
+3. Agent analyzes and asks clarifying questions
+4. Refine requirement until clear
+
+**Example Input**:
+```
+Add OAuth2 support to our login system.
+
+Context:
+- Currently using session-based auth
+- Need SSO integration with Google/Microsoft
+- Mobile app also needs to support this
+- Migration path needed for existing users
+```
+
+**What Agent Does**:
+- Parses your description
+- Identifies key terms (OAuth2, SSO, migration)
+- Lists affected systems (web, mobile, auth)
+- Flags ambiguities ("What about users with existing sessions?")
+- Produces requirement summary
+
+**Your Role**:
+- Review summary
+- Answer any questions
+- Clarify any misunderstandings
+- Approve to proceed to Phase 2
+
+**Success Criteria**:
+- Requirement is clear to everyone
+- Scope is bounded (not too broad)
+- No contradictions
+- Edge cases identified
+
+---
+
+### Phase 2: Impact Analysis
+
+**Goal**: Identify which files/modules are affected  
+**Time**: ~10 minutes  
+**Agent**: Impact Agent  
+**Input**: Approved requirement  
+**Output**: List of affected files
+
+**What to Do**:
+1. Agent scans codebase
+2. Traces from requirement entry point
+3. Lists all affected files with reasons
+4. Review list for accuracy
+
+**Example Output**:
+```
+Affected files for OAuth2 integration:
+
+Primary:
+  - src/auth/oauth2.py (new) - OAuth2 implementation
+  - src/auth/login.py (modify) - OAuth login flow
+  - src/models/user.py (modify) - Add oauth_id field
+  
+Secondary:
+  - src/api/routes.py (modify) - Add OAuth callback endpoint
+  - src/middleware/auth.py (modify) - Update auth check
+  
+Tests:
+  - tests/auth/test_oauth2.py (new)
+  - tests/auth/test_login.py (modify)
+  
+Docs:
+  - docs/auth/oauth2.md (new)
+```
+
+**Your Role**:
+- Review list
+- Confirm: "Are these the right files?"
+- Add any missing files
+- Remove unrelated files
+- Approve to proceed to Phase 3
+
+**Success Criteria**:
+- All affected files identified
+- No unrelated files included
+- Dependencies traced accurately
+
+---
+
+### Phase 3: Specification
+
+**Goal**: Create detailed specification for the change  
+**Time**: ~30 minutes  
+**Agent**: Spec Agent  
+**Input**: Requirement + affected files  
+**Output**: Specification document (specs/[name].md)  
+**Gate**: Spec Approval (HARD STOP) ⛔
+
+**What to Do**:
+1. Agent drafts detailed spec using template
+2. Spec includes:
+   - Summary (what is this feature?)
+   - API contracts (inputs/outputs)
+   - Business logic (how it works)
+   - Edge cases (what can go wrong?)
+   - Test scenarios (how to validate?)
+3. You review spec
+4. Request changes if needed
+5. Team lead approves spec
+
+**Example Spec Outline**:
+```markdown
+# Spec: OAuth2 Integration
+
+## Summary
+Add OAuth2 authentication support, allowing users to sign in with 
+Google and Microsoft accounts.
+
+## Affected Files
+- src/auth/oauth2.py (new)
+- src/auth/login.py
+- src/models/user.py
+- etc.
+
+## API Contracts
+
+### POST /auth/oauth2/login
+Input: { provider: "google" | "microsoft", code: string }
+Output: { token: string, user: User }
+Errors: InvalidProvider, InvalidCode, ServerError
+
+## Business Logic
+1. Validate OAuth code with provider
+2. Get user email from provider
+3. Find or create user in database
+4. Generate session token
+5. Return user + token
+
+## Edge Cases
+- User already exists but with different oauth_id?
+- Session token expires during OAuth flow?
+- User cancels OAuth authorization?
+- Duplicate account requests?
+
+## Test Scenarios
+1. New user signs in with Google → Account created
+2. Existing user signs in with Google → Session created
+3. Invalid code provided → Error returned
+4. User cancels OAuth → Redirect to login
+
+## Non-Goals
+- Auto-account linking (separate phase)
+- Social profile syncing (separate phase)
+
+## Breaking Changes
+None (backward compatible)
+```
+
+**Your Role**:
+1. Review spec completeness
+2. Check: "Does this spec clearly define what needs to be built?"
+3. If unclear → Ask agent to clarify
+4. If clear → Send to team lead for approval
+
+**Approver Role** (Team Lead):
+1. Review spec using approval checklist
+2. Check: Scope? API contracts? Edge cases? Tests?
+3. Approve → ✓ Spec is now LOCKED
+4. Reject → Return for revisions
+
+**⛔ GATE**: You CANNOT proceed to implementation without spec approval. This is a hard stop.
+
+**Success Criteria**:
+- ✓ Spec passes approval checklist
+- ✓ All approvers have signed off
+- ✓ Spec is marked APPROVED with timestamp
+
+---
+
+### Phase 4: Design (Optional)
+
+**Goal**: Plan architecture for complex changes  
+**Time**: ~15 minutes  
+**Agent**: Design Agent  
+**Input**: Approved spec  
+**Output**: Architecture notes  
+**Skip if**: Spec is simple or design is standard
+
+**When to Skip**:
+- CRUD feature (standard create/read/update/delete)
+- Similar feature exists (reuse design)
+- Spec is simple and clear
+
+**When to Do**:
+- Breaking change (need migration plan)
+- Novel architecture (no precedent)
+- Cross-module changes (coordination needed)
+- Performance-critical (needs optimization plan)
+
+**Example Design Output**:
+```
+OAuth2 Architecture:
+
+## Components
+1. OAuth2Handler - Manages OAuth flow
+2. TokenManager - Generates/validates tokens
+3. UserSync - Creates/updates user records
+
+## Flow
+1. User clicks "Login with Google"
+2. App redirects to Google OAuth endpoint
+3. Google redirects back with code
+4. App calls POST /auth/oauth2/login with code
+5. OAuth2Handler validates code with Google
+6. User record created/updated
+7. Token generated + returned
+
+## Migration Path
+- Existing sessions continue to work
+- New feature is opt-in (users choose OAuth)
+- Old email/password login still available
+
+## Performance Notes
+- OAuth code validation: ~500ms (acceptable)
+- User lookup: ~50ms (database indexed)
+- Token generation: ~10ms
+- Total flow: ~600ms
+```
+
+**Your Role**:
+1. Review design
+2. Check: "Is this architecture sound?"
+3. If unsure → Ask Design Agent to clarify
+4. If sound → Approve to proceed to Phase 5
+
+**Success Criteria**:
+- Design is sound
+- Architecture decisions documented
+- Migration path is clear (if breaking change)
+
+---
+
+### Phase 5: Implementation
+
+**Goal**: Generate code changes  
+**Time**: ~45 minutes  
+**Agent**: Implementation Agent  
+**Input**: Spec + target files  
+**Gate**: Pre-implementation scope check ⛔  
+**Output**: Code diff
+
+**Gate Check** (Automatic):
+```
+Checking scope:
+- Spec affected files: [src/auth/oauth2.py, src/auth/login.py, ...]
+- Your target files: [src/auth/oauth2.py, src/auth/login.py, ...]
+- Scope match? YES ✓
+- Proceeding with implementation...
+```
+
+**What to Do**:
+1. Provide spec path + target files
+2. Agent generates code changes
+3. Review generated code
+4. Request modifications if needed (back to agent)
+5. Once code looks good → Approve to Phase 6
+
+**Example Input**:
+```
+Spec: specs/oauth2-integration.md
+Target files:
+- src/auth/oauth2.py (new file)
+- src/auth/login.py (modify)
+- src/models/user.py (modify)
+```
+
+**Example Output** (Code diff):
+```python
+# NEW FILE: src/auth/oauth2.py
+
+from oauth2_provider import OAuth2Handler as BaseHandler
+
+class OAuth2Handler(BaseHandler):
+    def validate_code(self, code, provider):
+        """Validate OAuth code with provider."""
+        if provider == "google":
+            # Validate with Google API
+            user_data = self._validate_google_code(code)
+        elif provider == "microsoft":
+            # Validate with Microsoft API
+            user_data = self._validate_microsoft_code(code)
+        else:
+            raise InvalidProvider(f"Unknown provider: {provider}")
+        return user_data
+```
+
+**Your Role**:
+1. Review code
+2. Check: "Does this implement the spec?"
+3. Check: "Is code quality acceptable?"
+4. If issues → Ask agent to fix
+5. If good → Approve to Phase 6
+
+**Success Criteria**:
+- Code implements all spec requirements
+- Code doesn't exceed spec scope
+- Code quality is acceptable
+- Tests can pass with this code
+
+---
+
+### Phase 6: Testing
+
+**Goal**: Create tests for the changes  
+**Time**: ~20 minutes  
+**Agent**: Test Agent  
+**Input**: Spec + implementation code  
+**Output**: Test files + test results
+
+**What to Do**:
+1. Agent generates test cases based on spec
+2. Tests cover:
+   - Happy path (spec scenarios)
+   - Edge cases (from spec)
+   - Error cases (error handling)
+3. Review tests
+4. Run tests
+5. All tests pass → Approve to Phase 7/9
+
+**Example Test Output**:
+```python
+# tests/auth/test_oauth2.py
+
+def test_new_user_oauth_login():
+    """Test: New user signs in with Google."""
+    code = "valid_google_code"
+    result = oauth2_handler.login(code, provider="google")
+    
+    assert result["user"]["email"] == "user@example.com"
+    assert result["token"] is not None
+    assert User.objects.filter(oauth_id="google:12345").exists()
+
+def test_invalid_oauth_code():
+    """Test: Invalid code raises error."""
+    code = "invalid_code"
+    with pytest.raises(InvalidCode):
+        oauth2_handler.login(code, provider="google")
+
+def test_unknown_provider():
+    """Test: Unknown provider raises error."""
+    code = "valid_code"
+    with pytest.raises(InvalidProvider):
+        oauth2_handler.login(code, provider="unknown")
+```
+
+**Your Role**:
+1. Review test cases
+2. Check: "Do these tests cover spec scenarios?"
+3. Run tests: `npm test` or `pytest`
+4. All pass? → Approve to next phase
+5. Any fail? → Go to Phase 7 (Debug)
+
+**Success Criteria**:
+- Tests pass (100% pass rate)
+- Coverage >= 80% for changed code
+- All spec scenarios tested
+- No flaky tests
+
+---
+
+### Phase 7: Debugging (If Needed)
+
+**Goal**: Fix failing tests  
+**Time**: Varies (5-30 min typical)  
+**Agent**: Debug Agent  
+**Input**: Failing test + error log  
+**Output**: Root cause + fix
+
+**When Used**:
+- Any test fails during Phase 6
+- Loops back to Phase 6 to re-run tests
+
+**Example Debug Session**:
+```
+Test: test_invalid_oauth_code
+Error: AssertionError: InvalidCode not raised
+
+Debug Agent Analysis:
+- Test calls oauth2_handler.login() with invalid code
+- Handler doesn't validate code properly
+- Root cause: Validation check is commented out (line 42)
+- Fix: Uncomment validation check
+
+Suggested fix:
+# Line 40-45 in src/auth/oauth2.py
+- # if not self._is_valid_code(code):
+- #     raise InvalidCode("Invalid OAuth code")
++ if not self._is_valid_code(code):
++     raise InvalidCode("Invalid OAuth code")
+```
+
+**Your Role**:
+1. Review root cause analysis
+2. Approve suggested fix
+3. Agent applies fix
+4. Go back to Phase 6 to re-run tests
+5. Repeat until all pass
+
+**Success Criteria**:
+- Root cause identified
+- Fix is minimal (doesn't change other code)
+- All tests pass after fix
+- No new failures introduced
+
+---
+
+### Phase 8: Refactoring (Optional)
+
+**Goal**: Clean up code (if needed)  
+**Time**: ~15 minutes  
+**Agent**: Design Agent  
+**Input**: Passing code + tests  
+**Output**: Refactoring recommendation or skipped  
+**Skip unless**: Code has duplication or performance issues
+
+**When to Skip**:
+- Spec complete and tests pass
+- No obvious duplication
+- No performance issues
+- Time pressure
+
+**When to Do**:
+- Code has duplicated logic (3+ times)
+- Performance can be improved
+- Maintainability can be improved
+
+---
+
+### Phase 9: Review & Readiness
+
+**Goal**: Final code review + readiness checks  
+**Time**: ~20-30 minutes  
+**Agent**: Review Agent  
+**Input**: Code diff + spec + tests  
+**Gates**: Pre-review spec alignment ⛔ + Pre-PR readiness ⛔  
+**Output**: Review findings + approval
+
+**What Happens**:
+
+**Sub-phase 1: Spec Alignment Check**
+```
+Checking:
+- Does code implement spec? YES ✓
+- Does code exceed spec? NO ✓
+- Are edge cases handled? YES ✓
+- Is error handling complete? YES ✓
+
+Result: ALIGNED ✓
+```
+
+**Sub-phase 2: Code Review**
+```
+Findings:
+✓ Code quality: Good
+✓ Security: No issues
+✓ Performance: Acceptable
+⚠ Documentation: Missing docstring in oauth2_handler.validate_code()
+```
+
+**Sub-phase 3: Pre-PR Readiness Check**
+```
+Checking:
+✓ Tests passing? 100% pass rate
+✓ Coverage >= 80%? 85% coverage
+✓ Linter passing? Zero warnings
+✓ Documentation updated? Partial (see above)
+✓ Changelog entry? Not yet
+✓ Spec referenced in PR? Yes
+
+Status: READY (fix docstring + add changelog first)
+```
+
+**Your Role**:
+1. Review findings
+2. Fix any issues found
+3. Re-run readiness check
+4. All checks pass → Ready for merge
+
+**Success Criteria**:
+- ✓ Spec alignment approved
+- ✓ Review findings all addressed
+- ✓ All readiness checks pass
+- ✓ PR ready for merge
+
+---
+
+### Phase 10: Documentation
+
+**Goal**: Update docs + changelog  
+**Time**: ~20 minutes  
+**Agent**: Documentation Agent  
+**Input**: Approved PR + spec  
+**Output**: Updated docs + changelog
+
+**What to Update**:
+
+1. **README.md** (if API changes)
+   ```
+   Add section: OAuth2 Authentication
+   ```
+
+2. **Docstrings** (for modified functions)
+   ```python
+   def oauth_login(code, provider):
+       """
+       Authenticate user via OAuth2.
+       
+       Args:
+           code: OAuth2 authorization code
+           provider: "google" or "microsoft"
+       
+       Returns:
+           {"token": str, "user": User}
+       """
+   ```
+
+3. **Changelog** (required)
+   ```
+   ## [1.2.0] - 2026-05-20
+   
+   ### Added
+   - OAuth2 authentication support (Google + Microsoft)
+   - Spec: specs/oauth2-integration.md
+   
+   ### Changed
+   - User model now includes oauth_id field
+   
+   ### Migration
+   - Existing email/password auth continues to work
+   - Users can link OAuth accounts anytime
+   ```
+
+4. **Architecture notes** (if design is complex)
+   ```
+   See: docs/auth/oauth2-architecture.md
+   ```
+
+**Your Role**:
+1. Review updated documentation
+2. Check: "Is it clear and accurate?"
+3. If good → Approve
+4. If issues → Ask agent to fix
+
+**Success Criteria**:
+- Documentation is complete
+- Changelog entry is accurate
+- No typos or inconsistencies
+- Ready for user communication
+
+---
+
+## 4️⃣ Memory System (10 min)
+
+### What is Memory?
+
+Memory stores decisions so your team doesn't repeat work.
+
+**Without Memory** (❌ Wasteful):
+```
+Session 1: Analyze payment retry logic (1000 tokens)
+Session 2: Analyze same logic again (1000 tokens) [DUPLICATE]
+Session 3: Analyze again (1000 tokens) [DUPLICATE]
+
+Total: 3000 tokens wasted
+```
+
+**With Memory** (✓ Efficient):
+```
+Session 1: Analyze payment retry logic (1000 tokens)
+         → Save to memory (100 tokens)
+Session 2: Load from memory (50 tokens)
+Session 3: Load from memory (50 tokens)
+
+Total: 1200 tokens (60% savings)
+```
+
+### Where is Memory?
+
+```
+.workflow/memory/
+  architecture/       # System design decisions
+  workflows/          # Workflow optimization notes
+  incidents/          # Bug root causes
+  ui/                 # Design patterns
+  security/           # Security decisions
+  patterns/           # Code patterns
+  regression/         # Test failure analysis
+```
+
+### How to Save to Memory
+
+**After Phase 3** (Spec approved):
+```
+Save: specs/oauth2-integration.md
+To: memory/specs/ (link to spec)
+```
+
+**After Phase 5** (Implementation):
+```
+Save: Architecture decision for OAuth2 flow
+To: memory/decisions/2026-05-20-oauth2-design.md
+```
+
+**After Phase 7** (Bug fixed):
+```
+Save: Root cause analysis of timeout issue
+To: memory/incidents/2026-05-20-payment-timeout-fix.md
+```
+
+### How to Use Memory
+
+**Before starting a new task**:
+```
+Load from memory:
+  - Search: "oauth" → Find previous OAuth decisions
+  - Load: Previous OAuth implementation notes
+  - Learn: What patterns were used before?
+```
+
+### Memory Best Practices
+
+1. **Keep it brief** - One page max per decision
+2. **Make it searchable** - Use clear titles + keywords
+3. **Save early** - Don't wait till end
+4. **Link related notes** - Connect decisions
+5. **Archive old notes** - Remove when no longer relevant
+
+---
+
+## 5️⃣ Approval Gates (10 min)
+
+### What are Gates?
+
+Gates are **hard stops** that prevent proceeding without approval/validation.
+
+### Gate 1: Spec Approval ⛔
+
+**Location**: After Phase 3  
+**Purpose**: Ensure spec is complete before implementation  
+**Enforcer**: Team lead  
+**Duration**: Usually 5 minutes (if spec is good)
+
+**Spec Approval Checklist**:
+- ✓ Summary clear
+- ✓ Affected files listed
+- ✓ API contracts documented
+- ✓ Business logic described
+- ✓ Edge cases identified
+- ✓ Test scenarios defined
+- ✓ Non-goals declared
+- ✓ Breaking changes documented (if any)
+
+**If Approved**:
+```
+✓ Spec is LOCKED
+✓ Proceed to Phase 4 (Design)
+```
+
+**If Rejected**:
+```
+✗ Spec needs revision
+→ Revise spec based on feedback
+→ Resubmit to approver
+```
+
+### Gate 2: Pre-Implementation Scope Check ⛔
+
+**Location**: Before Phase 5  
+**Purpose**: Verify you're implementing exactly what spec requires  
+**Enforcer**: Implementation Agent (automated)  
+**Duration**: Immediate
+
+**Scope Check Validation**:
+- ✓ Target files match spec's affected files
+- ✓ No additional files added (scope creep prevention)
+- ✓ Budget available (token count check)
+- ✓ No conflicting changes in progress
+
+**If Passed**:
+```
+✓ Scope verified
+✓ Proceed to Phase 5 (Implementation)
+```
+
+**If Failed**:
+```
+✗ Scope mismatch detected
+Reason: Spec mentions src/payment/models.py but you specified src/auth/models.py
+→ Clarify which files should be modified
+→ Either update spec OR update target files
+→ Re-run scope check
+```
+
+### Gate 3: Pre-Review Spec Alignment ⛔
+
+**Location**: Before Phase 9 Code Review  
+**Purpose**: Ensure code matches spec  
+**Enforcer**: Review Agent (automated)  
+**Duration**: Immediate
+
+**Alignment Check**:
+- ✓ Code implements all spec requirements
+- ✓ Code doesn't exceed spec (no scope creep)
+- ✓ Edge cases handled
+- ✓ Error handling matches spec
+
+**If Passed**:
+```
+✓ Code is spec-aligned
+✓ Proceed to Phase 9 (Review)
+```
+
+**If Failed**:
+```
+✗ Code misaligned with spec
+Issue: Spec requires retrying on network timeout, but code doesn't check for that
+→ Either fix code to match spec
+→ OR amend spec (requires re-approval)
+→ Re-run alignment check
+```
+
+### Gate 4: Pre-PR Readiness ⛔
+
+**Location**: Before PR merge  
+**Purpose**: Ensure everything is ready for production  
+**Enforcer**: CI/CD (automated)  
+**Duration**: Usually 1-2 hours
+
+**Readiness Checklist**:
+- ✓ All tests passing (100%)
+- ✓ Coverage >= 80%
+- ✓ Linter passing (zero warnings)
+- ✓ Static analysis clean
+- ✓ Documentation updated
+- ✓ Spec referenced in PR
+- ✓ Commit messages follow format
+- ✓ Performance impact < 5%
+
+**If Passed**:
+```
+✓ Everything ready
+✓ PR approved for merge
+```
+
+**If Failed**:
+```
+✗ Readiness check failed
+Issues:
+  - Test coverage: 72% (need 80%)
+  - Linter: 2 warnings (need zero)
+  - Documentation: Missing changelog
+
+→ Fix issues
+→ Re-run readiness check
+→ Once all pass, PR can merge
+```
+
+### Emergency Gate Override
+
+**Rare**: For production emergencies only
+
+**Example**:
+```
+Emergency: Database pool exhausted, users getting 500 errors
+Type: HOTFIX
+VP Approval: @john_smith
+Bypass: Spec approval gate (only)
+
+Process:
+1. VP approves override
+2. Proceeding without spec approval
+3. All gates override logged to memory
+4. Post-incident review scheduled (24h later)
+```
+
+---
+
+## 6️⃣ Tools & IDE Integration (15 min)
+
+### Which Tool Should I Use?
+
+| Tool | Best For | Effort |
+|---|---|---|
+| **GitHub Copilot** | Chat in IDE, quick answers | Low |
+| **Claude (Web)** | Deep analysis, long context | Medium |
+| **Cursor** | IDE with built-in AI | Low |
+| **Cline** | Autonomous workflows | Medium |
+| **Continue** | IDE with customizable AI | Low |
+| **Windsurf** | IDE with powerful AI | Low |
+
+### Quick Start by Tool
+
+#### GitHub Copilot
+```
+1. Open Copilot chat in VS Code
+2. Type: @copilot load .workflow/workflow-orchestrator.md
+3. Describe your task
+4. Copilot routes to correct phase
+5. Follow along
+```
+
+#### Claude
+```
+1. Go to claude.ai
+2. Upload: .workflow/CLAUDE.md (or manually load it)
+3. Describe your task
+4. Claude explains workflow phase by phase
+5. Can paste code snippets for review
+```
+
+#### Cursor
+```
+1. Open .cursorrules in project
+2. Open Cursor chat
+3. Describe your task
+4. Cursor references .cursorrules automatically
+5. Asks clarifying questions per workflow
+```
+
+#### Cline
+```
+1. Install Cline extension
+2. Open Cline chat
+3. Describe your task
+4. Type: @workflow-status (shows current phase)
+5. Cline can run tests, make commits, etc.
+```
+
+---
+
+## 7️⃣ Troubleshooting & FAQ (10 min)
+
+### Q: I'm stuck on a phase. What do I do?
+
+**A**: 
+1. Check orchestrator: `.workflow/workflow-orchestrator.md`
+2. Find your current phase
+3. Read the detailed phase description
+4. If still confused:
+   - Search memory: Do similar tasks exist?
+   - Ask team lead
+   - Create GitHub issue
+
+### Q: Can I skip a phase?
+
+**A**: 
+- ✓ Can skip: Phase 4 (Design), Phase 8 (Refactoring), Phase 10 (Documentation) — but not recommended
+- ✗ Cannot skip: Phase 3 (Spec), Phase 5 (Implementation), Phase 6 (Testing), Phase 9 (Review)
+
+### Q: I disagree with gate rejection. What do I do?
+
+**A**: 
+1. Understand the reason
+2. Discuss with approver
+3. If you have valid counter-argument:
+   - Document it
+   - Escalate to tech lead
+   - Tech lead makes final decision (documented in PR)
+
+### Q: My spec got rejected. Now what?
+
+**A**: 
+1. Approver provided feedback
+2. Revise spec addressing all feedback
+3. Resubmit to approver
+4. This usually takes 1-2 cycles
+
+### Q: Test is failing. What do I do?
+
+**A**: 
+1. Go to Phase 7 (Debug)
+2. Debug Agent analyzes failing test
+3. Root cause identified
+4. Fix applied
+5. Re-run test
+6. If still failing, loop back to Debug
+
+### Q: I implemented more than the spec says. Is that OK?
+
+**A**: 
+No. Gate 3 (Pre-Review Spec Alignment) will reject scope creep.
+- Either revert extra changes
+- Or amend spec (requires re-approval)
+
+### Q: How much token budget should I worry about?
+
+**A**: 
+You don't need to worry. Orchestrator handles budgets automatically.
+But if you see warnings:
+- "Token budget exceeded" → Phase overflowed
+- Subsequent phases will reduce their budgets
+
+### Q: Can I use this workflow with my existing IDE?
+
+**A**: 
+Yes! Workflow is tool-agnostic.
+- Copilot? ✓ Works
+- Claude? ✓ Works
+- Cursor? ✓ Works
+- Cline? ✓ Works
+- Continue? ✓ Works
+- Windsurf? ✓ Works
+- Any other AI? ✓ Works (might be slower)
+
+### Q: What if the orchestrator doesn't cover my situation?
+
+**A**: 
+1. Check: Is it a common workflow? (See workflow types section)
+2. Check: Is it a variation? (Check "Advanced Topics" section)
+3. If not covered:
+   - Create GitHub issue
+   - Suggest workflow variation
+   - Team lead will review + add to orchestrator
+
+---
+
+## 8️⃣ Advanced Topics (Optional)
+
+### A. Multi-Phase Parallel Execution
+
+**Situation**: Implementation and testing can sometimes run in parallel
+
+**How**:
+```
+Phase 5: Implementation Agent generates code
+        └─ ASYNC: Phase 6: Test Agent generates tests
+        └─ Wait for both to complete
+        └─ Merge code + tests
+        └─ Run all tests
+```
+
+**Benefit**: Saves ~10-15 minutes per workflow
+
+### B. Cross-Team Workflow
+
+**Situation**: Feature requires Frontend + Backend work
+
+**How**:
+```
+Spec: Shared OAuth2 integration spec
+
+Frontend track:
+  Phase 1-3 → Phase 5 (UI implementation)
+  Phase 6 (UI tests) → Phase 9 (Review)
+
+Backend track:
+  Phase 1-3 (shared) → Phase 5 (API implementation)
+  Phase 6 (API tests) → Phase 9 (Review)
+
+Coordination:
+  - Both teams reference same spec
+  - Both teams save to shared memory
+  - Both teams follow same gates
+  - PR merge happens together
+```
+
+### C. Hotfix to Feature Promotion
+
+**Situation**: Hotfix was so useful, now making it a real feature
+
+**How**:
+```
+Hotfix Phase: Fast implementation (no spec)
+  Result: Working but incomplete
+
+Feature Phase: Full implementation
+  1. Create proper spec from hotfix
+  2. Get spec approved (might differ from hotfix)
+  3. Refactor hotfix code per spec
+  4. Full test coverage
+  5. Documentation
+  6. Proper release process
+```
+
+### D. Breaking Change Workflow
+
+**Situation**: Your change breaks existing API
+
+**How**:
+```
+Phase 3: Spec must include:
+  - "Breaking Changes" section
+  - Migration path for existing users
+  - Sunset timeline (if removing old API)
+  
+Gate 4: Breaking Change Detection
+  - Triggered automatically
+  - Requires migration docs approval
+  - Cannot proceed without clear migration path
+
+Phase 10: Documentation
+  - Changelog mentions breaking change
+  - Migration guide created
+  - User communications drafted
+```
+
+---
+
+## 📚 Quick Reference
+
+### File Structure
+```
+.workflow/
+  workflow-orchestrator.md      ← START HERE
+  
+  instructions/
+    core/                        ← Core principles
+    workflow/                    ← Workflow details
+    token-optimization/          ← Optimization
+    developer/                   ← Dev-specific
+    security/                    ← Security rules
+  
+  agents/                        ← 9 agent definitions
+  
+  hooks/                         ← Pre/post-phase hooks
+  
+  memory/                        ← Persistent decisions
+    architecture/
+    workflows/
+    incidents/
+    patterns/
+  
+  specs/                         ← Feature specifications
+  
+  snippets/                      ← Reusable prompts
+```
+
+### Key Documents
+- **Start**: `.workflow/workflow-orchestrator.md`
+- **Learn**: `.workflow/instructions/core/architecture.md`
+- **Build**: `.workflow/instructions/workflow/lifecycle-routing.md`
+- **Approve**: `.workflow/instructions/core/approval-rules.md`
+- **Optimize**: `.workflow/instructions/token-optimization/`
+- **Review**: `.workflow/instructions/developer/`
+
+### Commands
+
+**View current phase**:
+```
+See: workflow-orchestrator.md (routing section)
+```
+
+**Load spec**:
+```
+File: specs/[feature-name].md
+```
+
+**Check memory**:
+```
+Search: memory/ directory
+Query: keyword search
+```
+
+**Run agent**:
+```
+Read: agents/[agent-name].agent.md
+Follow: instructions in agent
+```
+
+---
+
+## 🎯 Summary
+
+Welcome to the Developer Workflow! 
+
+**Key Takeaways**:
+1. Always start with `.workflow/workflow-orchestrator.md`
+2. Follow phases in order (can skip some, not all)
+3. Gates are hard stops (you can't bypass them)
+4. Save decisions to memory (for team reuse)
+5. Work is spec-first, not code-first
+
+**Your Next Steps**:
+1. Read the orchestrator (15 min)
+2. Try one workflow (1-3 hours)
+3. Give feedback to team
+4. Help others learn the system
+
+**Questions?** 
+→ Check "Troubleshooting" section above
+→ Or ask team lead
+
+Happy building! 🚀
