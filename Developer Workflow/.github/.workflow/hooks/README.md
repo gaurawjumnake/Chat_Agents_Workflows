@@ -1,53 +1,78 @@
-# Hook System: Master Index
+# Hook System: Reference Guide
 
-The hook system is a library of copy-paste-ready prompts that automate context management, prevent re-scanning, and enforce gated workflows inside IDE chat agents.
+⚠️ **IMPORTANT**: Hooks are now triggered automatically by [workflow-orchestrator.md](../../workflow-orchestrator.md).
 
-## What Are Hooks?
+You do not need to manually invoke hooks. Instead:
 
-Hooks are **prompt templates** designed to be executed sequentially or in chains. They:
+1. Read [workflow-orchestrator.md](../../workflow-orchestrator.md)
+2. Describe your task
+3. Orchestrator routes you to the correct phase
+4. Hooks are automatically executed as part of phase execution
+5. You do NOT need to understand hook mechanics
+
+This folder is a **reference only**. For primary guidance, see [workflow-orchestrator.md](../../workflow-orchestrator.md) + `instructions/`.
+
+## What Are Hooks? (Reference)
+
+Hooks are **instruction templates** that:
+- Load context before task execution (pre-hooks)
+- Trigger automatic actions after phase completion (post-hooks)
+- Enforce gates and validation rules
+- Save decisions/patterns/bugs automatically
 - Reduce token usage by 50-60%
-- Prevent context loss between chat sessions
-- Enforce spec-driven development gates
-- Automate context file updates
-- Are 100% IDE-agnostic (work in any chat agent)
+- Work in any IDE chat agent
 
-## Quick Start (2 minutes)
+Hooks are organized by **lifecycle phase** and are executed automatically by the orchestrator.
 
-1. Read [CATALOG.md](CATALOG.md) to understand all available hooks.
-2. Pick a workflow from [chains/README.md](chains/README.md).
-3. Follow [IDE-EXECUTION-GUIDE.md](IDE-EXECUTION-GUIDE.md) for your IDE.
-4. Use [DAILY-USAGE-EXAMPLES.md](DAILY-USAGE-EXAMPLES.md) for copy-paste commands.
+## How Hooks Are Triggered
 
-## Hook Types (By Purpose)
+See [instructions/workflow/lifecycle-routing.md](../../instructions/workflow/lifecycle-routing.md) for phase-specific hook triggers.
 
-### Pre-Task Hooks (Context Loading)
-- `pre-task/context-load`: Load specs, decisions, patterns
+## Hook Reference Catalog
 
-### Workflow Hooks (Main Development Phases)
+### Context Loading Hooks
+- `pre-task/context-load`: Load specs, decisions, patterns before task
 
-**Spec Phase:**
-- `spec/post-requirement.auto-create-spec`: Auto-create draft spec from requirement + impact
-- `spec/approval-gate`: Gate implementation on spec approval
+### Workflow Hooks (Automatic)
 
-**Implementation Phase:**
+**Spec Phase (Phase 3)**
+- `spec/post-requirement.auto-create-spec`: Generate draft spec
+- `spec/approval-gate`: Enforce spec approval before proceeding
+
+**Implementation Phase (Phase 5)**
 - `implementation/pre-implementation.scope-check`: Validate scope
 - `implementation/post-implementation.context-update`: Save decision
-- `implementation/post-implementation.test-generation`: Auto-generate tests
+- `implementation/post-implementation.test-generation`: Generate tests
 
-**Review Phase:**
+**Review Phase (Phase 9)**
 - `review/pre-review.spec-check`: Validate diff aligns with spec
 - `review/post-review.findings-archive`: Save review findings
 
-**Quality Hooks:**
-- `quality/review-diff`: Perform focused code review
-- `quality/detect-breaking-changes`: Flag API breaks
+**Quality Hooks**
+- `quality/review-diff`: Perform focused code review on diff only
+- `quality/detect-breaking-changes`: Flag API-breaking changes
 
-**Debug Phase:**
+**Debug Phase (Phase 7)**
 - `debug/post-debug.memory-archive`: Save bug root cause
 
-**PR Phase:**
-- `pr/pre-pr.gate-readiness`: Verify PR readiness
+**PR Phase**
+- `pr/pre-pr.gate-readiness`: Verify PR is ready
 - `pr/post-pr.changelog-update`: Auto-update changelog
+
+## Execution Model
+
+Hooks are NOT manual. They execute automatically:
+
+```
+Workflow -> Orchestrator -> Phase Routing -> Hook Triggers -> Agent Execution -> Auto-Save
+```
+
+You only interact with:
+1. [workflow-orchestrator.md](../../workflow-orchestrator.md) (describe task)
+2. Agent files in `agents/` (follow agent instructions)
+3. Memory files in `memory/` (for manual edits only)
+
+Hooks run silently in the background.
 
 **Context Maintenance:**
 - `context/update-patterns`: Extract and save patterns

@@ -1,6 +1,10 @@
-# Token Optimization Checklist
+# Token Optimization Checklist (Execution Tool)
 
-Use this checklist before every AI interaction.
+⚠️ **NOT AN ENTRY POINT** - See [workflow-orchestrator.md](workflow-orchestrator.md) for workflow definitions.
+
+This is an **execution checklist** to use before each AI interaction. Complement to the orchestrator workflow.
+
+---
 
 ## Context Hygiene
 
